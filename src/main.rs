@@ -11,14 +11,6 @@ use yarte::Serialize;
 use may_minihttp::{HttpService, HttpServiceFactory, Request, Response};
 use may_postgres::{self, Client, Statement};
 
-// Domain ---------------------------------------------------------------------
-
-#[derive(Debug, Serialize)]
-pub struct Story {
-    id: i32,
-    name: String,
-}
-
 // Constants ------------------------------------------------------------------
 
 // SQL queries
@@ -32,6 +24,14 @@ const ERROR_NOT_FOUND: u8 = 2;
 // Dispatch codes
 const STORIES: u8 = 1;
 const STORY: u8 = 2;
+
+// Domain ---------------------------------------------------------------------
+
+#[derive(Debug, Serialize)]
+pub struct Story {
+    id: i32,
+    name: String,
+}
 
 // Database -------------------------------------------------------------------
 
