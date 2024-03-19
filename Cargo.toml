@@ -5,23 +5,15 @@ edition = "2021"
 
 [dependencies]
 atoi = "2"
-bytes = "1"
-num_cpus = "1.0"
-smallvec = "1.1"
-
-log = { version = "0.4", features = ["release_max_level_off"] }
-mimalloc = { version = "0.1", default-features = false }
-nanorand = { version = "0.7", default-features = false, features = [
-    "std",
-    "wyrand",
-] }
-
-yarte = { version = "0.15", features = ["bytes-buf", "json"] }
 buf-min = { version = "0.7", features = ["bytes"] }
-
+matchit = { version = "0.8.0", default-features = false }
 may = { version = "0.3", default-features = false }
 may_minihttp = { version = "0.1.0", default-features = false }
 may_postgres = { git = "https://github.com/Xudong-Huang/may_postgres.git", rev = "bf1d86e", default-features = false }
+mimalloc = { version = "0.1", default-features = false }
+num_cpus = "1.0"
+smallvec = "1.1"
+yarte = { version = "0.15", features = ["bytes-buf", "json"] }
 
 [profile.release]
 opt-level = 3

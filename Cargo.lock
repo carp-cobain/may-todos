@@ -421,6 +421,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
 
 [[package]]
+name = "matchit"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56e8fcd7bd6025a951597d6ba2f8e48a121af7e262f2b52a006a09c8d61f9304"
+
+[[package]]
 name = "may"
 version = "0.3.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -448,13 +454,11 @@ version = "0.1.0"
 dependencies = [
  "atoi",
  "buf-min",
- "bytes 1.5.0",
- "log",
+ "matchit",
  "may",
  "may_minihttp",
  "may_postgres",
  "mimalloc",
- "nanorand",
  "num_cpus",
  "smallvec",
  "yarte",
@@ -534,12 +538,6 @@ checksum = "fa01922b5ea280a911e323e4d2fd24b7fe5cc4042e0d2cda3c40775cdc4bdc9c"
 dependencies = [
  "libmimalloc-sys",
 ]
-
-[[package]]
-name = "nanorand"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a51313c5820b0b02bd422f4b44776fbf47961755c74ce64afc73bfad10226c3"
 
 [[package]]
 name = "nix"
