@@ -169,7 +169,6 @@ impl TodoService {
             ("DELETE", &STORY) => self.delete_story(route.params, rsp),
             _ => {
                 rsp.status_code(404, "");
-                ()
             }
         }
     }
@@ -207,10 +206,7 @@ impl TodoService {
 
         let name = value
             .as_object()
-            .map(|o| o.get("name"))
-            .flatten()
-            .map(|o| o.as_str())
-            .flatten()
+            .map(|o| o.get("name").and_then(|o| o.as_str()).unwrap_or_default())
             .unwrap_or_default()
             .trim();
 
@@ -255,11 +251,9 @@ impl HttpService for TodoService {
         let mut body = req.body();
 
         let mut buf = Vec::new();
-        if method == "POST" {
-            if let Err(_) = body.read_to_end(&mut buf) {
-                rsp.status_code(500, "");
-                return Ok(());
-            }
+        if method == "POST" && body.read_to_end(&mut buf).is_err() {
+            rsp.status_code(500, "");
+            return Ok(());
         }
 
         if let Ok(route) = self.router.at(&path) {
