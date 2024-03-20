@@ -12,6 +12,7 @@ may_minihttp = { version = "0.1.0", default-features = false }
 may_postgres = { git = "https://github.com/Xudong-Huang/may_postgres.git", rev = "bf1d86e", default-features = false }
 mimalloc = { version = "0.1", default-features = false }
 num_cpus = "1.0"
+serde_json = "1.0.114"
 smallvec = "1.1"
 yarte = { version = "0.15", features = ["bytes-buf", "json"] }
 

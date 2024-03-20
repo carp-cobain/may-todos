@@ -460,6 +460,7 @@ dependencies = [
  "may_postgres",
  "mimalloc",
  "num_cpus",
+ "serde_json",
  "smallvec",
  "yarte",
 ]
