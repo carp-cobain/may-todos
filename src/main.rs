@@ -12,14 +12,16 @@ use may_minihttp::{HttpService, HttpServiceFactory, Request, Response};
 use may_postgres::{self, Client, Statement};
 
 // SQL queries
-const SQL_SELECT_STORIES: &str = "select * from stories limit 32";
+const SQL_SELECT_STORIES: &str = "select * from stories order by id desc limit 32";
 const SQL_SELECT_STORY: &str = "select * from stories where id = $1";
 const SQL_INSERT_STORY: &str = "insert into stories (name) values ($1) returning id";
 const SQL_DELETE_STORY: &str = "delete from stories where id = $1";
 
 // Error codes
 const ERROR_SQL_QUERY: u8 = 1;
-const ERROR_NOT_FOUND: u8 = 2;
+const ERROR_SQL_NOT_FOUND: u8 = 2;
+const ERROR_SQL_INSERT: u8 = 3;
+const ERROR_SQL_DELETE: u8 = 4;
 
 // Router dispatch codes
 const STORIES: u8 = 1;
@@ -95,7 +97,7 @@ impl PgConnection {
             let name = row.get(1);
             Ok(Story { id, name })
         } else {
-            Err(ERROR_NOT_FOUND)
+            Err(ERROR_SQL_NOT_FOUND)
         }
     }
 
@@ -103,22 +105,22 @@ impl PgConnection {
         let mut q = self
             .client
             .query_raw(&self.statements.insert_story, &[&name])
-            .map_err(|_| ERROR_SQL_QUERY)?;
+            .map_err(|_| ERROR_SQL_INSERT)?;
 
         if let Some(result) = q.next() {
-            let row = result.map_err(|_| ERROR_SQL_QUERY)?;
+            let row = result.map_err(|_| ERROR_SQL_INSERT)?;
             let id: i32 = row.get(0);
             let name = String::from(name);
             Ok(Story { id, name })
         } else {
-            Err(ERROR_NOT_FOUND)
+            Err(ERROR_SQL_INSERT)
         }
     }
 
     fn delete_story(&self, id: i32) -> Result<u64, u8> {
         self.client
             .execute_raw(&self.statements.delete_story, &[&id])
-            .map_err(|_| ERROR_SQL_QUERY)
+            .map_err(|_| ERROR_SQL_DELETE)
     }
 }
 
@@ -252,16 +254,16 @@ impl HttpService for TodoService {
         let method = req.method().to_owned();
         let mut body = req.body();
 
-        let mut buf = String::new();
+        let mut buf = Vec::new();
         if method == "POST" {
-            if let Err(_) = body.read_to_string(&mut buf) {
-                rsp.status_code(400, "");
+            if let Err(_) = body.read_to_end(&mut buf) {
+                rsp.status_code(500, "");
                 return Ok(());
             }
         }
 
         if let Ok(route) = self.router.at(&path) {
-            self.dispatch(route, &method, buf.as_bytes(), rsp);
+            self.dispatch(route, &method, &buf, rsp);
         } else {
             rsp.status_code(404, "");
         }
