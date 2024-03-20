@@ -11,22 +11,22 @@ use yarte::Serialize;
 use may_minihttp::{HttpService, HttpServiceFactory, Request, Response};
 use may_postgres::{self, Client, Statement};
 
-// Constants ------------------------------------------------------------------
-
 // SQL queries
 const SQL_SELECT_STORIES: &str = "select * from stories limit 32";
 const SQL_SELECT_STORY: &str = "select * from stories where id = $1";
 const SQL_INSERT_STORY: &str = "insert into stories (name) values ($1) returning id";
+const SQL_DELETE_STORY: &str = "delete from stories where id = $1";
 
 // Error codes
 const ERROR_SQL_QUERY: u8 = 1;
 const ERROR_NOT_FOUND: u8 = 2;
 
-// Dispatch codes
+// Router dispatch codes
 const STORIES: u8 = 1;
 const STORY: u8 = 2;
 
-// Domain ---------------------------------------------------------------------
+// Max name len
+const MAX_LEN: usize = 100;
 
 #[derive(Debug, Serialize)]
 pub struct Story {
@@ -34,12 +34,11 @@ pub struct Story {
     name: String,
 }
 
-// Database -------------------------------------------------------------------
-
 struct PgStatements {
     select_stories: Statement,
     select_story: Statement,
     insert_story: Statement,
+    delete_story: Statement,
 }
 
 struct PgConnection {
@@ -54,11 +53,13 @@ impl PgConnection {
         let select_stories = client.prepare(SQL_SELECT_STORIES).unwrap();
         let select_story = client.prepare(SQL_SELECT_STORY).unwrap();
         let insert_story = client.prepare(SQL_INSERT_STORY).unwrap();
+        let delete_story = client.prepare(SQL_DELETE_STORY).unwrap();
 
         let statements = Arc::new(PgStatements {
             select_stories,
             select_story,
             insert_story,
+            delete_story,
         });
 
         Self { client, statements }
@@ -91,11 +92,8 @@ impl PgConnection {
 
         if let Some(result) = q.next() {
             let row = result.map_err(|_| ERROR_SQL_QUERY)?;
-            let story = Story {
-                id: row.get(0),
-                name: row.get(1),
-            };
-            Ok(story)
+            let name = row.get(1);
+            Ok(Story { id, name })
         } else {
             Err(ERROR_NOT_FOUND)
         }
@@ -110,13 +108,17 @@ impl PgConnection {
         if let Some(result) = q.next() {
             let row = result.map_err(|_| ERROR_SQL_QUERY)?;
             let id: i32 = row.get(0);
-            Ok(Story {
-                id,
-                name: name.into(),
-            })
+            let name = String::from(name);
+            Ok(Story { id, name })
         } else {
             Err(ERROR_NOT_FOUND)
         }
+    }
+
+    fn delete_story(&self, id: i32) -> Result<u64, u8> {
+        self.client
+            .execute_raw(&self.statements.delete_story, &[&id])
+            .map_err(|_| ERROR_SQL_QUERY)
     }
 }
 
@@ -143,8 +145,6 @@ impl PgConnectionPool {
     }
 }
 
-// Service --------------------------------------------------------------------
-
 struct TodoService {
     router: Router<u8>,
     db: PgConnection,
@@ -161,9 +161,10 @@ impl TodoService {
     #[inline(always)]
     fn dispatch(&self, route: Match<'_, '_, &u8>, method: &str, body: &[u8], rsp: &mut Response) {
         match (method, route.value) {
+            ("POST", &STORIES) => self.create_story(body, rsp),
             ("GET", &STORIES) => self.get_stories(rsp),
             ("GET", &STORY) => self.get_story(route.params, rsp),
-            ("POST", &STORIES) => self.create_story(body, rsp),
+            ("DELETE", &STORY) => self.delete_story(route.params, rsp),
             _ => {
                 rsp.status_code(404, "");
                 ()
@@ -208,17 +209,37 @@ impl TodoService {
             .flatten()
             .map(|o| o.as_str())
             .flatten()
-            .unwrap_or_default();
+            .unwrap_or_default()
+            .trim();
 
-        if name.is_empty() {
+        if name.is_empty() || name.len() > MAX_LEN {
             rsp.status_code(400, "");
             return;
         }
 
-        if let Ok(story) = self.db.create_story(&name) {
+        if let Ok(story) = self.db.create_story(name) {
             rsp.status_code(201, "");
             rsp.header("Content-Type: application/json");
             story.to_bytes_mut(rsp.body_mut());
+        } else {
+            rsp.status_code(400, "");
+        }
+    }
+
+    #[inline(always)]
+    fn delete_story(&self, params: Params, rsp: &mut Response) {
+        let param = params.get("id").unwrap_or_default();
+        let id = atoi::<i32>(param.as_bytes()).unwrap_or_default();
+        if id <= 0 {
+            rsp.status_code(400, "");
+            return;
+        }
+        if let Ok(rows) = self.db.delete_story(id) {
+            if rows > 0 {
+                rsp.status_code(204, "");
+            } else {
+                rsp.status_code(404, "");
+            }
         } else {
             rsp.status_code(400, "");
         }
@@ -249,8 +270,6 @@ impl HttpService for TodoService {
     }
 }
 
-// HTTP Server ----------------------------------------------------------------
-
 struct HttpServer {
     pool: PgConnectionPool,
 }
@@ -263,8 +282,6 @@ impl HttpServiceFactory for HttpServer {
         TodoService::new(db)
     }
 }
-
-// Main -----------------------------------------------------------------------
 
 fn main() {
     may::config().set_pool_capacity(1000).set_stack_size(0x1000);
