@@ -24,7 +24,7 @@ fn main() {
     println!("Starting http server on port 8080");
     let server = HttpServer {
         pool: PgConnectionPool::new(
-            "postgres://postgres:password1@127.0.0.1:5432/may",
+            "postgres://postgres:password1@127.0.0.1:5432/may2",
             num_cpus::get(),
         ),
     };

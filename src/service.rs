@@ -5,8 +5,9 @@ use matchit::Params;
 use may_minihttp::Response;
 use yarte::Serialize;
 
-// Max name len
+// Name length range
 const MAX_LEN: usize = 100;
+const MIN_LEN: usize = 3;
 
 pub struct Service {
     pub db: PgConnection,
@@ -47,7 +48,7 @@ impl Service {
             .unwrap_or_default()
             .trim();
 
-        if name.is_empty() || name.len() > MAX_LEN {
+        if name.len() < MIN_LEN || name.len() > MAX_LEN || !name.is_ascii() {
             rsp.status_code(400, "");
             return;
         }
