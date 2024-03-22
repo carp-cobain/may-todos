@@ -5,10 +5,9 @@ pub struct PgConnectionPool {
 }
 
 impl PgConnectionPool {
-    pub fn new(db_url: &'static str, size: usize) -> PgConnectionPool {
+    pub fn new(db_url: &str, size: usize) -> PgConnectionPool {
         let connections = (0..size)
-            .map(|_| std::thread::spawn(move || PgConnection::new(db_url)))
-            .map(|t| t.join().unwrap())
+            .map(|_| PgConnection::new(db_url))
             .collect::<Vec<_>>();
         PgConnectionPool { connections }
     }

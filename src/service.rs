@@ -6,8 +6,8 @@ use may_minihttp::Response;
 use yarte::Serialize;
 
 // Name length range
-const MAX_LEN: usize = 100;
-const MIN_LEN: usize = 3;
+const MAX_CHARS: usize = 100;
+const MIN_CHARS: usize = 3;
 
 pub struct Service {
     pub db: PgConnection,
@@ -48,7 +48,8 @@ impl Service {
             .unwrap_or_default()
             .trim();
 
-        if name.len() < MIN_LEN || name.len() > MAX_LEN || !name.is_ascii() {
+        let num_chars = name.chars().count();
+        if num_chars < MIN_CHARS || num_chars > MAX_CHARS {
             rsp.status_code(400, "");
             return;
         }

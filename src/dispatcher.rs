@@ -44,16 +44,14 @@ impl DispatcherService {
 impl HttpService for DispatcherService {
     fn call(&mut self, req: Request, rsp: &mut Response) -> Result<()> {
         let path = req.path().to_owned();
-        let method = req.method().to_owned();
-        let mut body = req.body();
-
-        let mut buf = Vec::new();
-        if method == "POST" && body.read_to_end(&mut buf).is_err() {
-            rsp.status_code(500, "");
-            return Ok(());
-        }
-
         if let Ok(route) = self.router.at(&path) {
+            let method = req.method().to_owned();
+            let mut body = req.body();
+            let mut buf = Vec::new();
+            if method == "POST" && body.read_to_end(&mut buf).is_err() {
+                rsp.status_code(500, "");
+                return Ok(());
+            }
             self.dispatch(route, &method, &buf, rsp);
         } else {
             rsp.status_code(404, "");
