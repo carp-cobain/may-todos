@@ -9,7 +9,6 @@ pub struct Config {
     pub db_user: String,
     pub db_password: String,
     pub db_database: String,
-    pub db_schema: String,
 }
 
 /// Default for config just calls basic constructor
@@ -35,7 +34,6 @@ impl Config {
         let db_user = env::var("DB_USER").expect("DB_USER not set");
         let db_password = env::var("DB_PASS").expect("DB_PASS not set");
         let db_database = env::var("DB_NAME").expect("DB_NAME not set");
-        let db_schema = env::var("DB_SCHEMA").expect("DB_SCHEMA not set");
 
         // Create config
         Self {
@@ -45,7 +43,6 @@ impl Config {
             db_user,
             db_password,
             db_database,
-            db_schema,
         }
     }
 

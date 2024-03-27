@@ -14,12 +14,14 @@ pub struct Service {
 }
 
 impl Service {
+    #[inline]
     pub fn get_stories(&self, rsp: &mut Response) {
         let stories = self.db.get_stories().unwrap_or_default();
         rsp.header("Content-Type: application/json");
         stories.to_bytes_mut(rsp.body_mut());
     }
 
+    #[inline]
     pub fn get_story(&self, params: Params, rsp: &mut Response) {
         let param = params.get("id").unwrap_or_default();
         let id = atoi::<i32>(param.as_bytes()).unwrap_or_default();
@@ -35,6 +37,7 @@ impl Service {
         }
     }
 
+    #[inline]
     pub fn create_story(&self, body: &[u8], rsp: &mut Response) {
         let value: serde_json::Value = serde_json::from_slice(body).unwrap_or_default();
         if !value.is_object() {
@@ -59,10 +62,11 @@ impl Service {
             rsp.header("Content-Type: application/json");
             story.to_bytes_mut(rsp.body_mut());
         } else {
-            rsp.status_code(400, "");
+            rsp.status_code(500, "");
         }
     }
 
+    #[inline]
     pub fn delete_story(&self, params: Params, rsp: &mut Response) {
         let param = params.get("id").unwrap_or_default();
         let id = atoi::<i32>(param.as_bytes()).unwrap_or_default();
@@ -71,13 +75,10 @@ impl Service {
             return;
         }
         if let Ok(rows) = self.db.delete_story(id) {
-            if rows > 0 {
-                rsp.status_code(204, "");
-            } else {
-                rsp.status_code(404, "");
-            }
+            let status = if rows > 0 { 204 } else { 404 };
+            rsp.status_code(status, "");
         } else {
-            rsp.status_code(400, "");
+            rsp.status_code(500, "");
         }
     }
 }

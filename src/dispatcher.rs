@@ -28,6 +28,7 @@ impl DispatcherService {
     }
 
     /// Dispatch requests to matched service methods.
+    #[inline]
     fn dispatch(&self, route: Match<'_, '_, &u8>, method: &str, body: &[u8], rsp: &mut Response) {
         match (method, route.value) {
             ("POST", &STORIES) => self.service.create_story(body, rsp),
@@ -43,8 +44,7 @@ impl DispatcherService {
 
 impl HttpService for DispatcherService {
     fn call(&mut self, req: Request, rsp: &mut Response) -> Result<()> {
-        let path = req.path().to_owned();
-        if let Ok(route) = self.router.at(&path) {
+        if let Ok(route) = self.router.at(&req.path().to_owned()) {
             let method = req.method().to_owned();
             let mut body = req.body();
             let mut buf = Vec::new();

@@ -6,6 +6,9 @@ edition = "2021"
 [dependencies]
 atoi = "2"
 buf-min = { version = "0.7", features = ["bytes"] }
+dotenv = { version = "0.15", default-features = false }
+env_logger = "0.11"
+log = { version = "0.4", features = ["release_max_level_off"] }
 matchit = { version = "0.8", default-features = false }
 may = { version = "0.3", default-features = false }
 may_minihttp = { version = "0.1", default-features = false }

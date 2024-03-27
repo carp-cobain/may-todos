@@ -6,10 +6,11 @@ pub struct PgConnectionPool {
 
 impl PgConnectionPool {
     pub fn new(db_url: &str, size: usize) -> PgConnectionPool {
-        let connections = (0..size)
-            .map(|_| PgConnection::new(db_url))
-            .collect::<Vec<_>>();
-        PgConnectionPool { connections }
+        PgConnectionPool {
+            connections: (0..size)
+                .map(|_| PgConnection::new(db_url))
+                .collect::<Vec<_>>(),
+        }
     }
 
     pub fn get_connection(&self, id: usize) -> PgConnection {
